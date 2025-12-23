@@ -2,6 +2,8 @@ import cv2
 from deepface import DeepFace
 from scipy.spatial.distance import cosine
 
+CONFIDENCE_THRESHOLD = 0.4
+
 def detect_faces(frame):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
@@ -23,7 +25,7 @@ def extract_embedding(input_data):
     except ValueError:
         return None
 
-def verify_face(embedding, db, threshold=0.4):
+def verify_face(embedding, db, threshold=CONFIDENCE_THRESHOLD):
     min_dist = float("inf")
     identity = "Unknown"
 

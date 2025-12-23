@@ -47,6 +47,7 @@ checkpoint
 Old Version/
 dataset/
 Encodings/
+data/
 
 # Temporary files
 *.tmp

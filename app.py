@@ -26,11 +26,16 @@ ctk.set_default_color_theme("blue")
 
 SUCCESS = "#34c759"
 ERROR = "#f25f5f"
+INFO = "#3498db"
 
 class FaceAuthGUI(ctk.CTk):
 
     def __init__(self):
         super().__init__()
+
+        if not os.path.exists(storage.ADMIN_PW_PATH):
+            self.first_run_admin_setup()
+
         self.title("Biometric Authentication System")
         self.geometry("780x640")
 
@@ -41,6 +46,7 @@ class FaceAuthGUI(ctk.CTk):
         self.log_interval = 1.0
         self._last_log = {}
 
+        self.running = True
         self.is_admin = False
         self.mode = "AUTH"
 
@@ -69,6 +75,9 @@ class FaceAuthGUI(ctk.CTk):
 
     # ================= VIDEO LOOP =================
     def update_frame(self):
+        if not self.running:
+            return
+        
         ret, frame = self.cap.read()
         if ret:
             faces = detect_faces(frame)
@@ -118,8 +127,44 @@ class FaceAuthGUI(ctk.CTk):
                 win.destroy()
             else:
                 self.status.configure(text="Admin authentication failed", fg_color=ERROR)
+                entry.delete(0, 'end')
 
         ctk.CTkButton(win, text="Login", command=submit).pack(pady=10)
+
+    def first_run_admin_setup(self):
+        win = ctk.CTkToplevel(self)
+        win.title("Set Admin Password")
+        win.geometry("360x200")
+        win.grab_set()
+
+        lbl = ctk.CTkLabel(win, text="No admin password found.\nPlease set a new password:")
+        lbl.pack(pady=12, padx=12)
+
+        pw_entry = ctk.CTkEntry(win, show="*", placeholder_text="Enter password")
+        pw_entry.pack(pady=6, padx=12, fill="x")
+
+        pw_confirm = ctk.CTkEntry(win, show="*", placeholder_text="Confirm password")
+        pw_confirm.pack(pady=6, padx=12, fill="x")
+
+        def set_pw():
+            pw = pw_entry.get().strip()
+            confirm = pw_confirm.get().strip()
+            if not pw:
+                self.status.configure(text="Password cannot be empty", fg_color=ERROR)
+                return
+            if pw != confirm:
+                self.status.configure(text="Passwords do not match", fg_color=ERROR)
+                return
+            # Set hashed admin password
+            storage.set_admin_password(pw)
+            self.status.configure(text="Admin password set. Please log in.", fg_color=SUCCESS)
+            win.grab_release()
+            win.destroy()
+
+        btn_frame = ctk.CTkFrame(win)
+        btn_frame.pack(pady=10)
+
+        ctk.CTkButton(btn_frame, text="Set Password", fg_color=SUCCESS, command=set_pw).pack(side="left", padx=6)
 
     # ================= ENROLL =================
     def enroll_window(self):
@@ -189,14 +234,18 @@ class FaceAuthGUI(ctk.CTk):
                 return
 
             faces = detect_faces(frame)
-            if len(faces) == 1:
+            if len(faces) == 0:
+                self.status.configure(text="No face detected. Adjust your position.", fg_color=ERROR)
+            elif len(faces) > 1:
+                self.status.configure(text="Multiple faces detected. Ensure only one face.", fg_color=ERROR)
+            else:
                 face = crop_face(frame, faces[0])
                 emb = extract_embedding(face)
                 if emb:
                     storage.add_user(None, username, emb)
                     collected += 1
                     lbl.configure(text=f"Collected {collected}/{target}")
-
+                    
             if collected >= target:
                 finish(True)
                 return
@@ -326,8 +375,16 @@ class FaceAuthGUI(ctk.CTk):
             os.startfile(storage.LOG_PATH)
 
     def on_close(self):
-        self.cap.release()
-        self.destroy()
+        self.running = False
+        try:
+            self.cap.release()
+        except Exception as e:
+            logging.error(f"Error releasing camera: {e}")
+        
+        try:
+            self.destroy()
+        except Exception as e:
+            logging.error(f"Error closing application: {e}")
 
 if __name__ == "__main__":
     app = FaceAuthGUI()

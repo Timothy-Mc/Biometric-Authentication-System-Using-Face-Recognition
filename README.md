@@ -1,33 +1,47 @@
 # Biometric Authentication System (Face Recognition)
 
-A desktop GUI application for face-based biometric authentication and enrollment. Uses a webcam to authenticate users and allows administrators to enroll new users by capturing samples or uploading image folders.
+A **desktop GUI application** for face-based biometric authentication and enrollment. It uses a webcam to authenticate users and allows administrators to enroll new users via live capture or image folder uploads.  
 
-**Status:** Prototype — intended for local use and testing.
+**Status:** Prototype — for local use and testing only.
 
-**Contents**
-- `app.py` — main GUI application
-- `face_utils.py` — face detection / embedding helpers (project-specific)
-- `storage.py` — persistence for users, encodings and logs
-- `data/`, `dataset/` — project datasets (may be large)
+---
 
-**Core Features**
-- Live webcam authentication with bounding-box overlay and confidence score
-- Admin login to access enrollment
-- Enroll via camera capture (configurable sample count) or upload image folders
-- Asynchronous, non-blocking enrollment and upload with progress dialogs
-- Logging of authentication and enrollment events
+## Contents
+- `app.py` — main GUI application  
+- `face_utils.py` — face detection and embedding helpers  
+- `storage.py` — persistence for users, embeddings, and logs  
+- `data/`, `dataset/` — project datasets (may be large)  
 
-**Requirements**
-- Python 3.8+
-- A working webcam for capture
-- Recommended packages (install via pip):
-  - `customtkinter`
-  - `opencv-python`
-  - `Pillow`
-  - `numpy`
-  - `tensorflow` or `tensorflow-cpu` (depending on your hardware)
+---
 
-Example quick install:
+## Core Features
+- Live webcam authentication with bounding boxes and confidence scores  
+- Admin login with hashed password for secure access  
+- User enrollment via:
+  - **Camera capture** (configurable number of samples)  
+  - **Image folder upload** with progress dialog  
+- Asynchronous, non-blocking operations to keep the UI responsive  
+- Logs authentication and enrollment events for audit and debugging  
+
+---
+
+## Requirements
+- Python 3.8+  
+- A working webcam  
+- Required packages (install via pip):
+
+```text
+customtkinter
+opencv-python
+Pillow
+numpy
+tensorflow  # or tensorflow-cpu for CPU-only systems
+deepface
+bcrypt
+scipy
+```
+
+## Quick install example:
 
 ```bash
 python -m venv .venv
@@ -36,45 +50,57 @@ pip install --upgrade pip
 pip install customtkinter opencv-python Pillow numpy tensorflow
 ```
 
-If you prefer, create a `requirements.txt` and run `pip install -r requirements.txt`.
+*Optional:* include all packages in requirements.txt for easy installation.
 
-**Run the app**
+## Running the App
 
 ```bash
 python app.py
 ```
+- The GUI opens and initializes the webcam feed.
+- On first run, you will be prompted to set an admin password.
 
-The GUI will open and start the webcam feed.
+## Usage
 
-**Usage**
+### Modes & Status
+- The status bar displays the current mode and messages (authentication, enrollment progress, errors).
 
-- Mode: The status bar shows current mode and messages.
-- Admin Login: Click "Admin Login" and enter the admin password configured in `storage.py`.
-- Enroll User: After admin login, click "Enroll User".
-  - "Capture from Camera": prompts for the number of samples, then captures that many valid face embeddings (non-blocking).
-  - "Upload Images": pick a folder containing face images; files are processed one-by-one with a progress dialog.
-- Open Log: Opens the authentication/enrollment log file (Windows only uses `os.startfile`).
+### Admin Login
+1. Click **Admin Login**.  
+2. Enter the admin password (hashed and stored securely).
 
-**Data and Storage**
-- `storage.py` manages loading/saving encodings and logs. Inspect it to see where files are written (e.g., `data/`, `logs/`, or configured paths).
-- Large datasets and generated encodings are ignored by the included `.gitignore` by default. If you want to track `data/`, remove it from `.gitignore`.
+### Enroll User
+After logging in as admin:  
+1. Click **Enroll User**.  
+2. Choose enrollment method:
+   - **Capture from Camera** — specify number of samples, then capture valid face embeddings asynchronously.  
+   - **Upload Images** — select a folder; images are processed asynchronously, showing progress and results.
 
-**Tips & Troubleshooting**
-- If the camera doesn't open: check other apps using the webcam, or change `cv2.VideoCapture(0)` index.
-- If face embeddings fail or TensorFlow errors appear: ensure `tensorflow` is installed and that your GPU drivers match the installed TF version. For CPU-only systems, `tensorflow-cpu` is safer.
-- Slow UI during model load: start the app, wait a few seconds for models to initialize before attempting capture.
-- If images aren't detected during upload, verify image formats (`.jpg`, `.jpeg`, `.png`) and that faces are clearly visible.
+### Open Logs
+- Click **Open Log** to view authentication and enrollment logs. On Windows, this uses `os.startfile`.
 
-**Contributing**
-- Suggestions, bug reports, and PRs are welcome. Please open issues describing your environment and steps to reproduce.
 
-**Security & Privacy**
-- This project stores face embeddings and logs locally. Treat these artifacts as sensitive personal data.
-- Do not deploy this prototype in production without reviewing security, privacy, and legal implications.
+## Data & Storage
+- `storage.py` handles saving/loading embeddings and logs.  
+- Default storage paths: `data/` for embeddings and `logs/` for activity logs.  
+- Large datasets and generated embeddings are ignored by `.gitignore` by default.
 
-**License**
-- No license is included by default. Add a `LICENSE` file (e.g., MIT) if you want to make this project open-source.
+## Tips & Troubleshooting
+- Camera issues: ensure no other apps are using the webcam; try changing `cv2.VideoCapture(0)` index.  
+- TensorFlow errors: ensure correct installation and GPU drivers. Use `tensorflow-cpu` for CPU-only systems.  
+- Slow UI on startup: wait a few seconds for model initialization.  
+- Image uploads not detected: use `.jpg`, `.jpeg`, or `.png` images with clear frontal faces.
 
-**Acknowledgements**
-- Built with `OpenCV`, `TensorFlow`, and `CustomTkinter`.
+## Security & Privacy
+- Admin passwords are **hashed** (bcrypt).  
+- Face embeddings and logs are stored locally; treat as sensitive personal data.  
+- This prototype is **not production-ready**; review legal and privacy implications before deploying.
 
+
+## Contributing
+- Bug reports, suggestions, and pull requests are welcome.  
+- Please provide details on environment, steps to reproduce, and any errors encountered.
+
+
+## License
+- No license is included by default. Add a `LICENSE` file (e.g., MIT) if open-sourcing

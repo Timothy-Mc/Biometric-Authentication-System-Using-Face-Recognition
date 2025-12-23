@@ -2,6 +2,7 @@ import logging
 import os
 from datetime import datetime
 import pickle
+import bcrypt
 import warnings
 
 DATA_DIR = os.path.join("data")
@@ -58,11 +59,14 @@ def add_user(_, username, embedding):
 def verify_admin(password: str) -> bool:
     try:
         if os.path.exists(ADMIN_PW_PATH):
-            with open(ADMIN_PW_PATH, 'r', encoding='utf-8') as f:
-                stored = f.read().strip()
-            return password == stored
-        else:
-            return password == 'admin'
+            with open(ADMIN_PW_PATH, 'r') as f:
+                stored = f.read()
+            return bcrypt.checkpw(password.encode('utf-8'), stored.encode('utf-8'))
     except Exception as e:
         logging.error(f"Error verifying admin password: {e}")
         return False
+    
+def set_admin_password(password):
+    hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+    with open(ADMIN_PW_PATH, 'w', encoding='utf-8') as f:
+        f.write(hashed.decode('utf-8'))
